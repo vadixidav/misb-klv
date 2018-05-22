@@ -1,7 +1,7 @@
 use errors;
 use nom::IResult;
 
-fn ber_length(i: &[u8]) -> IResult<&[u8], u32> {
+fn length(i: &[u8]) -> IResult<&[u8], u32> {
     take_till!(i, |b| b & 0x80 == 0).and_then(|(remain, higher)| {
         higher
             .iter()
@@ -15,47 +15,44 @@ fn ber_length(i: &[u8]) -> IResult<&[u8], u32> {
 
 #[cfg(test)]
 mod tests {
-    use super::ber_length;
+    use super::length;
     use nom::{self, simple_errors::Context, ErrorKind, Needed};
 
     #[test]
-    fn ber_length_0_incomplete() {
+    fn length_0_incomplete() {
         let tag_empty = &[];
         assert_eq!(
-            ber_length(tag_empty),
+            length(tag_empty),
             Err(nom::Err::Incomplete(Needed::Size(1)))
         );
     }
 
     #[test]
-    fn ber_length_1_incomplete() {
+    fn length_1_incomplete() {
         let tag98 = &[0b11100010];
-        assert_eq!(
-            ber_length(tag98),
-            Err(nom::Err::Incomplete(Needed::Size(1)))
-        );
+        assert_eq!(length(tag98), Err(nom::Err::Incomplete(Needed::Size(1))));
     }
 
     #[test]
-    fn ber_length_1() {
+    fn length_1() {
         let tag98 = &[0b01100010];
-        assert_eq!(ber_length(tag98), Ok((&[] as &[_], 98)));
+        assert_eq!(length(tag98), Ok((&[] as &[_], 98)));
     }
 
     #[test]
-    fn ber_length_2() {
+    fn length_2() {
         let tag144 = &[0b10000001, 0b00010000];
-        assert_eq!(ber_length(tag144), Ok((&[] as &[_], 144)));
+        assert_eq!(length(tag144), Ok((&[] as &[_], 144)));
     }
 
     #[test]
-    fn ber_length_3() {
+    fn length_3() {
         let tag23298 = &[0b1000_0001, 0b1011_0110, 0b0000_0010];
-        assert_eq!(ber_length(tag23298), Ok((&[] as &[_], 23298)));
+        assert_eq!(length(tag23298), Ok((&[] as &[_], 23298)));
     }
 
     #[test]
-    fn ber_length_overflow() {
+    fn length_overflow() {
         let overflow = &[
             0b1100_0001,
             0b1011_0110,
@@ -65,7 +62,7 @@ mod tests {
             0b0000_0000,
         ];
         assert_eq!(
-            ber_length(overflow),
+            length(overflow),
             Err(nom::Err::Failure(Context::Code(
                 overflow as &[_],
                 ErrorKind::Custom(0x7fd10001)
