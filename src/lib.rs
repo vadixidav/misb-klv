@@ -1,3 +1,5 @@
+#![feature(slice_patterns, iterator_try_fold)]
+
 #[macro_use]
 extern crate nom;
 extern crate serde;
@@ -6,8 +8,5 @@ extern crate serde_json;
 extern crate serde_derive;
 extern crate byteorder;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
-}
+mod errors;
+mod klv;
