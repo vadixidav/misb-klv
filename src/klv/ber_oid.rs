@@ -1,14 +1,14 @@
 use errors;
 use nom::IResult;
 
-fn length(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn length(i: &[u8]) -> IResult<&[u8], u32> {
     take_till!(i, |b| b & 0x80 == 0).and_then(|(remain, higher)| {
         higher
             .iter()
             .chain(Some(&remain[0]))
             .try_fold(0u32, |acc, &b| acc.checked_mul(1 << 7).map(|acc| acc | (b & 0x7F) as u32))
             .map(|len| (&remain[1..], len))
-            // If the KLV length was unable to fit in a u32, return an error.
+            // If the tag length was unable to fit in a u32, return an error.
             .ok_or(errors::nom_fail(i, 0x7fd10001))
     })
 }
