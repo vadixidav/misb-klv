@@ -1,4 +1,4 @@
-#![feature(slice_patterns, iterator_try_fold)]
+#![feature(iterator_try_fold)]
 
 #[macro_use]
 extern crate nom;
