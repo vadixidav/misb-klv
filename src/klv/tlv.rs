@@ -6,7 +6,7 @@ pub struct TLVRaw<'a> {
     pub bytes: &'a [u8],
 }
 
-/// Written according to MISB 601.12
+/// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf)
 pub enum TLV {
     Checksum(u16),
     Unknown(Vec<u8>),
