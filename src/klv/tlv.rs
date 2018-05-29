@@ -18,7 +18,7 @@ pub enum TLV {
 /// Parse a TLV from a UAS Datalink Local Set Packet.
 named!(
     pub raw_tlv<TLVRaw>,
-    do_parse!(tag: call!(ber_oid) >> length: call!(ber) >> bytes: take!(length) >> (TLVRaw{tag: tag, bytes: bytes}))
+    do_parse!(tag: call!(ber_oid) >> length: call!(ber) >> bytes: take!(length) >> (TLVRaw{tag, bytes}))
 );
 
 /// Extract all the TLVs from an entire UAS Datalink Local Set Packet.
