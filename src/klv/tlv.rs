@@ -1,14 +1,16 @@
+use chrono::{DateTime, NaiveDateTime, Utc};
 use klv::{ber, ber_oid, udl_bytes};
-use nom::{self, be_u16, IResult};
+use nom::{self, be_u16, be_u64, IResult};
 
 pub struct TLVRaw<'a> {
     pub tag: u32,
     pub bytes: &'a [u8],
 }
 
-/// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf)
+/// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf).
 pub enum TLV {
     Checksum(u16),
+    PrecisionTimeStamp(DateTime<Utc>),
     Unknown(Vec<u8>),
 }
 
@@ -29,6 +31,16 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
         .map(|TLVRaw { tag, bytes }| {
             Ok(match tag {
                 1 => TLV::Checksum(be_u16(bytes)?.1),
+                2 => {
+                    let ts = be_u64(bytes)?.1;
+                    let seconds = ts / 1_000_000;
+                    // Remove the seconds and represent the remainder as nanoseconds.
+                    let nanos = (ts - seconds * 1_000_000) * 1000;
+                    TLV::PrecisionTimeStamp(DateTime::from_utc(
+                        NaiveDateTime::from_timestamp(seconds as i64, nanos as u32),
+                        Utc,
+                    ))
+                }
                 _ => TLV::Unknown(bytes.to_vec()),
             })
         })

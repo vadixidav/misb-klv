@@ -6,7 +6,7 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate byteorder;
+extern crate chrono;
 
 mod errors;
 mod klv;
