@@ -1,5 +1,5 @@
 use klv::{ber, ber_oid, udl_bytes};
-use nom::{self, IResult};
+use nom::{self, be_u16, IResult};
 
 pub struct TLVRaw<'a> {
     pub tag: u32,
@@ -25,8 +25,8 @@ pub fn udl_tlvs<'a>(i: &'a [u8]) -> IResult<&[u8], Vec<TLVRaw<'a>>> {
 pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u8]>> {
     Ok(tlvs
         .into_iter()
-        .map(|tlv| match tlv.tag {
-            _ => TLV::Unknown(tlv.bytes.to_vec()),
+        .map(|TLVRaw { tag, bytes }| match tag {
+            _ => TLV::Unknown(bytes.to_vec()),
         })
         .collect())
 }
