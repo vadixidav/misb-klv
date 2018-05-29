@@ -47,3 +47,17 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_table_10_example() {
+        // Data taken from `Table 10: Example “Dynamic & Constant” MISMMS Packet Data` in MISB 902.7.
+        let bytes = include_bytes!("table10_payload_only.bin");
+        let tlvs = many0!(&bytes[..], raw_tlv)
+            .and_then(|t| parse_tlvs(t.1))
+            .expect("unable to parse out TLVs");
+    }
+}

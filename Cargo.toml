@@ -1,7 +1,11 @@
 [package]
 name = "misb-klv"
 version = "0.1.0"
-authors = ["vadix"]
+authors = ["Geordon Worley"]
+
+[features]
+default = []
+verbose-errors = ["nom/verbose-errors"]
 
 [dependencies]
 nom = "4.0.0"

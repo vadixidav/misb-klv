@@ -16,7 +16,12 @@ pub fn ber_oid(i: &[u8]) -> IResult<&[u8], u32> {
 #[cfg(test)]
 mod tests {
     use super::ber_oid;
-    use nom::{self, simple_errors::Context, ErrorKind, Needed};
+    use nom::{self, ErrorKind, Needed};
+
+    #[cfg(not(feature = "verbose-errors"))]
+    use nom::simple_errors::Context;
+    #[cfg(feature = "verbose-errors")]
+    use nom::verbose_errors::Context;
 
     #[test]
     fn ber_oid_0_incomplete() {
