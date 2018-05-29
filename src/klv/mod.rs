@@ -9,7 +9,7 @@ const UDL_UNIVERSAL_KEY: [u8; 16] = [
     0x06, 0x0E, 0x2B, 0x34, 0x02, 0x0B, 0x01, 0x01, 0x0E, 0x01, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
 ];
 
-pub struct TLV<'a> {
+pub struct TLVRaw<'a> {
     pub tag: u32,
     pub bytes: &'a [u8],
 }
@@ -22,20 +22,20 @@ named!(
 
 /// Parse a TLV from a UAS Datalink Local Set Packet.
 named!(
-    pub tlv<TLV>,
-    do_parse!(tag: call!(ber_oid) >> length: call!(ber) >> bytes: take!(length) >> (TLV{tag: tag, bytes: bytes}))
+    pub raw_tlv<TLVRaw>,
+    do_parse!(tag: call!(ber_oid) >> length: call!(ber) >> bytes: take!(length) >> (TLVRaw{tag: tag, bytes: bytes}))
 );
 
 /// Parse all the TLV from any given byte slice.
 named!(
-    pub all_tlvs<Vec<TLV>>,
-    many0!(tlv)
+    pub all_raw_tlvs<Vec<TLVRaw>>,
+    many0!(raw_tlv)
 );
 
 /// Extract all the TLVs from an entire UAS Datalink Local Set Packet.
 named!(
-    pub udl_tlvs<Vec<TLV>>,
-    map_res!(udl_bytes, |i| all_tlvs(i).map(|t| t.1))
+    pub udl_tlvs<Vec<TLVRaw>>,
+    map_res!(udl_bytes, |i| all_raw_tlvs(i).map(|t| t.1))
 );
 
 #[cfg(test)]
