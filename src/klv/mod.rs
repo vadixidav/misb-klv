@@ -1,17 +1,41 @@
 mod ber;
 mod ber_oid;
 
+use self::ber::ber;
+use self::ber_oid::ber_oid;
+
 /// The UAS Datalink Local Set Universal Key found at the beginning of a MISB 601 packet.
 const UDL_UNIVERSAL_KEY: [u8; 16] = [
     0x06, 0x0E, 0x2B, 0x34, 0x02, 0x0B, 0x01, 0x01, 0x0E, 0x01, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00,
 ];
 
+pub struct TLV<'a> {
+    pub tag: u32,
+    pub bytes: &'a [u8],
+}
+
 /// Get the bytes of a UAS Datalink Local Set Packet payload.
 named!(
-    udl_bytes,
-    do_parse!(
-        tag!(UDL_UNIVERSAL_KEY) >> length: call!(ber::length) >> bytes: take!(length) >> (bytes)
-    )
+    pub udl_bytes,
+    do_parse!(tag!(UDL_UNIVERSAL_KEY) >> length: call!(ber) >> bytes: take!(length) >> (bytes))
+);
+
+/// Parse a TLV from a UAS Datalink Local Set Packet.
+named!(
+    pub tlv<TLV>,
+    do_parse!(tag: call!(ber_oid) >> length: call!(ber) >> bytes: take!(length) >> (TLV{tag: tag, bytes: bytes}))
+);
+
+/// Parse all the TLV from any given byte slice.
+named!(
+    pub all_tlvs<Vec<TLV>>,
+    many0!(tlv)
+);
+
+/// Extract all the TLVs from an entire UAS Datalink Local Set Packet.
+named!(
+    pub udl_tlvs<Vec<TLV>>,
+    map_res!(udl_bytes, |i| all_tlvs(i).map(|t| t.1))
 );
 
 #[cfg(test)]
