@@ -7,6 +7,8 @@ pub struct TLVRaw<'a> {
 }
 
 pub enum TLV {
+    // 1
+    Checksum(u16),
     Unknown(Vec<u8>),
 }
 
@@ -23,10 +25,12 @@ pub fn udl_tlvs<'a>(i: &'a [u8]) -> IResult<&[u8], Vec<TLVRaw<'a>>> {
 
 /// Parse all the TLVs in a UAS Datalink Local Set Packet.
 pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u8]>> {
-    Ok(tlvs
-        .into_iter()
-        .map(|TLVRaw { tag, bytes }| match tag {
-            _ => TLV::Unknown(bytes.to_vec()),
+    tlvs.into_iter()
+        .map(|TLVRaw { tag, bytes }| {
+            Ok(match tag {
+                1 => TLV::Checksum(be_u16(bytes)?.1),
+                _ => TLV::Unknown(bytes.to_vec()),
+            })
         })
-        .collect())
+        .collect()
 }
