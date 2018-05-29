@@ -8,6 +8,7 @@ pub struct TLVRaw<'a> {
 }
 
 /// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf).
+#[derive(Serialize, Deserialize)]
 pub enum TLV {
     Checksum(u16),
     PrecisionTimeStamp(DateTime<Utc>),
