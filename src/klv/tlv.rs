@@ -1,7 +1,9 @@
+use angle::Rad;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use errors;
 use klv::{ber, ber_oid, udl_bytes};
 use nom::{self, be_u16, be_u64, IResult};
+use std::f32::consts::PI;
 use std::iter::FromIterator;
 use Boolinator;
 
@@ -12,7 +14,7 @@ pub struct TLVRaw<'a> {
 }
 
 /// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TLV {
     /// TAG 1
     Checksum(u16),
@@ -22,6 +24,8 @@ pub enum TLV {
     MissionID(String),
     /// TAG 4
     PlatformTailNumber(String),
+    /// TAG 5
+    PlatformHeadingAngle(Rad<f32>),
     Unknown(Vec<u8>),
 }
 
@@ -63,6 +67,7 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
                 }
                 3 => TLV::MissionID(ascii_string(bytes)?),
                 4 => TLV::PlatformTailNumber(ascii_string(bytes)?),
+                5 => TLV::PlatformHeadingAngle(Rad(be_u16(bytes)?.1 as f32 / 65535.0 * PI * 2.0)),
                 _ => TLV::Unknown(bytes.to_vec()),
             })
         })
