@@ -2,13 +2,14 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use klv::{ber, ber_oid, udl_bytes};
 use nom::{self, be_u16, be_u64, IResult};
 
+#[derive(Clone, Debug)]
 pub struct TLVRaw<'a> {
     pub tag: u32,
     pub bytes: &'a [u8],
 }
 
 /// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf).
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TLV {
     Checksum(u16),
     PrecisionTimeStamp(DateTime<Utc>),
@@ -23,7 +24,8 @@ named!(
 
 /// Extract all the TLVs from an entire UAS Datalink Local Set Packet.
 pub fn udl_tlvs<'a>(i: &'a [u8]) -> IResult<&[u8], Vec<TLVRaw<'a>>> {
-    map_res!(i, udl_bytes, |i: &'a [u8]| many0!(i, raw_tlv).map(|t| t.1))
+    map_res!(i, udl_bytes, |i: &'a [u8]| many0!(i, complete!(raw_tlv))
+        .map(|t| t.1))
 }
 
 /// Parse all the TLVs in a UAS Datalink Local Set Packet.
@@ -53,11 +55,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_table_10_example() {
+    fn parse_table_11_full_udl_example() {
         // Data taken from `Table 10: Example “Dynamic & Constant” MISMMS Packet Data` in MISB 902.7.
-        let bytes = include_bytes!("table10_payload_only.bin");
-        let tlvs = many0!(&bytes[..], raw_tlv)
+        let bytes = include_bytes!("table_902.7-11_full_UDL_packet.bin");
+        let tlvs = udl_tlvs(&bytes[..])
             .and_then(|t| parse_tlvs(t.1))
             .expect("unable to parse out TLVs");
+
+        assert_eq!(
+            tlvs[0],
+            TLV::PrecisionTimeStamp(DateTime::from_utc(
+                NaiveDateTime::from_timestamp(1_231_798_102, 0),
+                Utc
+            ))
+        );
     }
 }
