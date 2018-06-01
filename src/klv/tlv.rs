@@ -1,6 +1,8 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
+use errors;
 use klv::{ber, ber_oid, udl_bytes};
 use nom::{self, be_u16, be_u64, IResult};
+use std::iter::FromIterator;
 
 #[derive(Clone, Debug)]
 pub struct TLVRaw<'a> {
@@ -11,8 +13,12 @@ pub struct TLVRaw<'a> {
 /// Written according to [MISB 601.12](http://www.gwg.nga.mil/misb/docs/standards/ST0601.12.pdf).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TLV {
+    /// TAG 1
     Checksum(u16),
+    /// TAG 2
     PrecisionTimeStamp(DateTime<Utc>),
+    /// TAG 3
+    MissionID(String),
     Unknown(Vec<u8>),
 }
 
@@ -44,6 +50,11 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
                         Utc,
                     ))
                 }
+                3 => if !bytes.iter().all(u8::is_ascii) {
+                    return Err(errors::nom_fail(bytes, 0x3a9f0996));
+                } else {
+                    TLV::MissionID(String::from_iter(bytes.iter().map(|&b| b as char)))
+                },
                 _ => TLV::Unknown(bytes.to_vec()),
             })
         })
