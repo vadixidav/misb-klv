@@ -3,6 +3,7 @@ use errors;
 use klv::{ber, ber_oid, udl_bytes};
 use nom::{self, be_u16, be_u64, IResult};
 use std::iter::FromIterator;
+use Boolinator;
 
 #[derive(Clone, Debug)]
 pub struct TLVRaw<'a> {
@@ -34,6 +35,14 @@ pub fn udl_tlvs<'a>(i: &'a [u8]) -> IResult<&[u8], Vec<TLVRaw<'a>>> {
         .map(|t| t.1))
 }
 
+// Try to create a string from an ASCII value.
+fn ascii_string<'a>(i: &'a [u8]) -> Result<String, nom::Err<&'a [u8]>> {
+    i.iter().all(u8::is_ascii).as_result_from(
+        || String::from_iter(i.iter().map(|&b| b as char)),
+        || errors::nom_fail(i, 0x3a9f0996),
+    )
+}
+
 /// Parse all the TLVs in a UAS Datalink Local Set Packet.
 pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u8]>> {
     tlvs.into_iter()
@@ -50,11 +59,7 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
                         Utc,
                     ))
                 }
-                3 => if !bytes.iter().all(u8::is_ascii) {
-                    return Err(errors::nom_fail(bytes, 0x3a9f0996));
-                } else {
-                    TLV::MissionID(String::from_iter(bytes.iter().map(|&b| b as char)))
-                },
+                3 => TLV::MissionID(ascii_string(bytes)?),
                 _ => TLV::Unknown(bytes.to_vec()),
             })
         })
