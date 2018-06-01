@@ -1,8 +1,8 @@
-use angle::Rad;
+use angle::{Angle, Deg, Rad};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use errors;
 use klv::{ber, ber_oid, udl_bytes};
-use nom::{self, be_u16, be_u64, IResult};
+use nom::{self, be_i16, be_u16, be_u64, IResult};
 use std::f32::consts::PI;
 use std::iter::FromIterator;
 use Boolinator;
@@ -26,6 +26,8 @@ pub enum TLV {
     PlatformTailNumber(String),
     /// TAG 5
     PlatformHeadingAngle(Rad<f32>),
+    /// TAG 6
+    PlatformPitchAngle(Option<Rad<f32>>),
     Unknown(Vec<u8>),
 }
 
@@ -68,6 +70,14 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
                 3 => TLV::MissionID(ascii_string(bytes)?),
                 4 => TLV::PlatformTailNumber(ascii_string(bytes)?),
                 5 => TLV::PlatformHeadingAngle(Rad(be_u16(bytes)?.1 as f32 / 65535.0 * PI * 2.0)),
+                6 => {
+                    let v = be_i16(bytes)?.1;
+                    TLV::PlatformPitchAngle(
+                        // According to ST0601.12, if the value is -32768i16 then it is out of range.
+                        // Out of range is represented using None.
+                        (v != -32768i16).as_some(Deg(v as f32 / 32767.0 * 20.0).to_rad()),
+                    )
+                }
                 _ => TLV::Unknown(bytes.to_vec()),
             })
         })
