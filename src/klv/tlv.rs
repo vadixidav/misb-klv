@@ -20,6 +20,8 @@ pub enum TLV {
     PrecisionTimeStamp(DateTime<Utc>),
     /// TAG 3
     MissionID(String),
+    /// TAG 4
+    PlatformTailNumber(String),
     Unknown(Vec<u8>),
 }
 
@@ -60,6 +62,7 @@ pub fn parse_tlvs<'a>(tlvs: Vec<TLVRaw<'a>>) -> Result<Vec<TLV>, nom::Err<&'a [u
                     ))
                 }
                 3 => TLV::MissionID(ascii_string(bytes)?),
+                4 => TLV::PlatformTailNumber(ascii_string(bytes)?),
                 _ => TLV::Unknown(bytes.to_vec()),
             })
         })
